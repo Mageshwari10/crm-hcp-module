@@ -1,10 +1,11 @@
 from langchain_groq import ChatGroq
-from langgraph.prebuilt import create_react_agent
+from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.tools import tool
 import os
 from database import SessionLocal
 import models
 from datetime import datetime, date
+from typing import Any
 
 # --- Define Tools ---
 
@@ -144,11 +145,42 @@ def schedule_followup(hcp_name: str, task_description: str, due_date: str) -> st
 
 tools = [log_interaction, edit_interaction, get_hcp_profile, get_recent_interactions, schedule_followup]
 
+class SimpleCRMAgent:
+    def __init__(self, model):
+        self.model = model
+        self.tools = {tool.name: tool for tool in tools}
+    
+    def invoke(self, input_data: dict, config: dict = None) -> dict:
+        messages = input_data.get("messages", [])
+        
+        system_msg = SystemMessage(content="""You are a helpful AI assistant for an CRM HCP (Healthcare Professional) Module. 
+You help users log interactions with healthcare professionals, edit past interactions, retrieve HCP profiles, view interaction history, and schedule follow-ups.
+
+Your tools include:
+- log_interaction: Log a new interaction with an HCP
+- edit_interaction: Update an existing interaction
+- get_hcp_profile: Get profile info about an HCP
+- get_recent_interactions: View recent interactions with an HCP
+- schedule_followup: Schedule a follow-up action
+
+Respond naturally and helpfully. If you need to use a tool, call it. Otherwise, provide a conversational response.""")
+        
+        # Build message list
+        msg_list = [system_msg]
+        for sender, text in messages:
+            if sender == "user":
+                msg_list.append(HumanMessage(content=text))
+        
+        # Get response from model
+        response = self.model.invoke(msg_list)
+        
+        return {"messages": msg_list + [response]}
+
 def get_agent():
     api_key = os.getenv("GROQ_API_KEY")
     if not api_key or api_key == "your-groq-api-key-here":
         raise ValueError("GROQ_API_KEY is not set or is invalid.")
         
-    model = ChatGroq(model="gemma2-9b-it", api_key=api_key)
-    agent = create_react_agent(model, tools)
+    model = ChatGroq(model="llama-3.1-8b-instant", api_key=api_key)
+    agent = SimpleCRMAgent(model)
     return agent

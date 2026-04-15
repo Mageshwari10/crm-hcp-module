@@ -34,7 +34,10 @@ def chat_with_agent(req: schemas.ChatRequest):
         ai_response = result["messages"][-1].content
         return {"response": ai_response}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        import traceback
+        error_detail = f"{str(e)}\n\n{traceback.format_exc()}"
+        print(f"ERROR: {error_detail}")
+        raise HTTPException(status_code=500, detail=error_detail)
 
 @app.get("/api/interactions", response_model=list[schemas.Interaction])
 def get_interactions(db: Session = Depends(get_db)):

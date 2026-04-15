@@ -1,95 +1,117 @@
 import React from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { RootState, AppDispatch } from '../store';
-import { updateDraftField, clearDraft, fetchInteractions } from '../store/crmSlice';
-import { FileText, Save } from 'lucide-react';
+import { Search, Plus, Mic } from 'lucide-react';
 
 const StructuredForm: React.FC = () => {
-  const dispatch = useDispatch<AppDispatch>();
-  const { draftInteraction, hcps } = useSelector((state: RootState) => state.crm);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const dbHcpId = draftInteraction.hcp_id || 1; // Default fallback for MVP
-
-      await fetch('http://localhost:8000/api/interactions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-           ...draftInteraction,
-           hcp_id: dbHcpId
-        })
-      });
-      dispatch(clearDraft());
-      dispatch(fetchInteractions());
-    } catch(err) {
-      console.error(err);
-    }
-  };
-
-  const handleChange = (field: string, value: any) => {
-    dispatch(updateDraftField({ field: field as any, value }));
-  };
 
   return (
-    <div className="glass-panel" style={{ height: '100%' }}>
-      <div className="panel-header">
-        <FileText size={20} color="var(--primary)" /> Manual Logger
+    <div className="panel">
+      <div className="panel-title form-title">
+        Interaction Details
       </div>
       
-      <div className="panel-content">
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>Provider (HCP)</label>
-            <select 
-              value={draftInteraction.hcp_id || ''} 
-              onChange={(e) => handleChange('hcp_id', parseInt(e.target.value))}
-            >
-              <option value="">Select an HCP...</option>
-              {hcps.map(hcp => (
-                <option key={hcp.id} value={hcp.id}>{hcp.name} - {hcp.specialty}</option>
-              ))}
-              {hcps.length === 0 && <option value="1">Dr. Demo Generic</option>}
+      <div className="form-content">
+        <div className="form-row">
+          <div>
+            <label>HCP Name</label>
+            <input type="text" placeholder="Search or select HCP..." />
+          </div>
+          <div>
+            <label>Interaction Type</label>
+            <select defaultValue="Meeting">
+              <option value="Meeting">Meeting</option>
+              <option value="Call">Call</option>
+              <option value="Email">Email</option>
             </select>
           </div>
+        </div>
 
-          <div className="form-group">
-            <label>Interaction Date</label>
-            <input 
-              type="date" 
-              value={draftInteraction.date}
-              onChange={(e) => handleChange('date', e.target.value)}
-              required
-            />
+        <div className="form-row">
+          <div>
+            <label>Date</label>
+            <input type="text" placeholder="19-04-2025" defaultValue="19-04-2025" />
           </div>
-
-          <div className="form-group">
-            <label>Products Discussed</label>
-            <input 
-              type="text" 
-              placeholder="e.g. CardioPlus, NeuroMax"
-              value={draftInteraction.products_discussed}
-              onChange={(e) => handleChange('products_discussed', e.target.value)}
-              required
-            />
+          <div>
+            <label>Time</label>
+            <input type="text" placeholder="19:36" defaultValue="19:36" />
           </div>
+        </div>
 
-          <div className="form-group">
-            <label>Interaction Notes</label>
-            <textarea 
-              rows={6}
-              placeholder="Detailed summary of the conversation..."
-              value={draftInteraction.notes}
-              onChange={(e) => handleChange('notes', e.target.value)}
-              required
-            />
-          </div>
+        <div>
+          <label>Attendees</label>
+          <input type="text" placeholder="Enter names or search..." />
+        </div>
 
-          <button type="submit" style={{ width: '100%', marginTop: '10px' }}>
-            <Save size={18} /> Save Interaction
+        <div>
+          <label>Topics Discussed</label>
+          <textarea rows={3} placeholder="Enter key discussion points..."></textarea>
+          <button type="button" className="btn" style={{ marginTop: '8px' }}>
+            <Mic size={14} /> Summarize from Voice Note (Requires Consent)
           </button>
-        </form>
+        </div>
+
+        <div>
+          <label style={{marginTop: '4px'}}>Materials Shared / Samples Distributed</label>
+          
+          <div className="box-section">
+            <div className="box-section-info">
+              <span>Materials Shared</span>
+              <small>No materials added.</small>
+            </div>
+            <button className="btn">
+              <Search size={14} /> Search/Add
+            </button>
+          </div>
+
+          <div className="box-section">
+            <div className="box-section-info">
+              <span>Samples Distributed</span>
+              <small>No samples added.</small>
+            </div>
+            <button className="btn">
+               Add Sample
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label>Observed/Inferred HCP Sentiment</label>
+          <div className="sentiment-group">
+            <label className="sentiment-option">
+              <input type="radio" name="sentiment" value="positive" />
+              <span>😊 Positive</span>
+            </label>
+            <label className="sentiment-option">
+              <input type="radio" name="sentiment" value="neutral" defaultChecked />
+              <span>😐 Neutral</span>
+            </label>
+            <label className="sentiment-option">
+              <input type="radio" name="sentiment" value="negative" />
+              <span>😞 Negative</span>
+            </label>
+          </div>
+        </div>
+
+        <div>
+          <label>Outcomes</label>
+          <textarea rows={2} placeholder="Key outcomes or agreements..."></textarea>
+        </div>
+
+        <div>
+          <label>Follow-up Actions</label>
+          <textarea rows={2} placeholder="Enter next steps or tasks..."></textarea>
+        </div>
+
+        <div>
+          <label style={{textTransform: 'none', fontWeight: 600, color: 'var(--text-main)', marginTop: '8px'}}>
+            AI Suggested Follow-ups:
+          </label>
+          <div className="ai-followup-links">
+            <a href="#">+ Schedule follow-up meeting in 2 weeks</a>
+            <a href="#">+ Send OncoBoost Phase III PDF</a>
+            <a href="#">+ Add Dr. Sharma to advisory board invite list</a>
+          </div>
+        </div>
+
       </div>
     </div>
   );

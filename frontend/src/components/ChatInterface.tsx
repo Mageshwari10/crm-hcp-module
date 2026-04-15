@@ -1,13 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { Bot, Send } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '../store';
-import { sendChatMessage, addMessage } from '../store/crmSlice';
-import { Send, Bot, User } from 'lucide-react';
+import { addMessage, sendChatMessage } from '../store/crmSlice';
 
 const ChatInterface: React.FC = () => {
   const [input, setInput] = useState('');
   const dispatch = useDispatch<AppDispatch>();
-  const { chatHistory, isLoading } = useSelector((state: RootState) => state.crm);
+  const { chatHistory, isLoading, error } = useSelector((state: RootState) => state.crm);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -30,38 +30,52 @@ const ChatInterface: React.FC = () => {
   };
 
   return (
-    <div className="glass-panel" style={{ height: '100%' }}>
-      <div className="panel-header">
-        <Bot size={20} color="var(--primary)" /> AI Co-Pilot
+    <div className="panel" style={{ height: '100%', maxHeight: 'calc(100vh - 100px)' }}>
+      <div className="panel-title" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '2px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Bot size={18} />
+          <span>AI Assistant</span>
+        </div>
+        <span className="panel-subtitle">Log interaction via chat</span>
       </div>
       
-      <div className="panel-content chat-container">
-        <div className="messages-area" ref={scrollRef}>
-          {chatHistory.map((msg) => (
-            <div key={msg.id} className={`message ${msg.sender}`}>
-              {msg.text}
-            </div>
+      <div className="chat-body" ref={scrollRef}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {chatHistory.map(msg => (
+             <div 
+               key={msg.id} 
+               className="agent-msg" 
+               style={msg.sender === 'user' ? { alignSelf: 'flex-end', background: 'var(--bg-body)', borderColor: 'var(--border-color)' } : { alignSelf: 'flex-start' }}
+             >
+               {msg.text}
+             </div>
           ))}
           {isLoading && (
-            <div className="typing-indicator">
-              <span></span><span></span><span></span>
+            <div className="agent-msg" style={{ alignSelf: 'flex-start', display: 'flex', gap: '4px' }}>
+               <span style={{ fontSize: '1.2rem'}}>...</span>
+            </div>
+          )}
+          {error && (
+            <div className="agent-msg" style={{ alignSelf: 'flex-start', color: 'red' }}>
+               {error}
             </div>
           )}
         </div>
+      </div>
 
-        <div className="chat-input-area">
-          <input 
-            type="text" 
-            placeholder="Log an interaction, e.g. 'Met with Dr. Smith...'" 
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-            disabled={isLoading}
-          />
-          <button className="send-btn" onClick={handleSend} disabled={isLoading || !input.trim()}>
-            <Send size={16} />
-          </button>
-        </div>
+      <div className="chat-footer">
+        <input 
+          className="chat-input"
+          type="text" 
+          placeholder="Describe interaction..."
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+        />
+        <button className="chat-log-btn" onClick={handleSend} disabled={isLoading}>
+           <Send size={14} style={{ transform: 'rotate(-45deg)', marginTop: '-2px' }} />
+           Log
+        </button>
       </div>
     </div>
   );
