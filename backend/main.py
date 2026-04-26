@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import inspect
 from dotenv import load_dotenv
+import os
 
 import models, schemas, agent
 from database import engine, get_db, SessionLocal
@@ -15,10 +16,17 @@ models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="CRM HCP API")
 
+# Configure CORS based on environment
+allowed_origins = os.getenv("ALLOWED_ORIGINS", "*").split(",")
+if allowed_origins == ["*"]:
+    allow_origins_list = ["*"]
+else:
+    allow_origins_list = [origin.strip() for origin in allowed_origins]
+
 # Add CORS middleware to allow React frontend to communicate with FastAPI
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # In production, restrict this to the frontend URL
+    allow_origins=allow_origins_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

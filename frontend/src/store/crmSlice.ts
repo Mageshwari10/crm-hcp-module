@@ -46,7 +46,15 @@ const initialState: CRMState = {
 };
 
 // Async thunks for API calls
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api';
+// Use relative path on production, localhost on development
+const getAPIBase = () => {
+  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+    return 'http://localhost:8000/api';
+  }
+  return '/api'; // Will use backend service from Render
+};
+
+const API_BASE = import.meta.env.VITE_API_BASE || getAPIBase();
 
 export const fetchInteractions = createAsyncThunk('crm/fetchInteractions', async () => {
   const response = await fetch(`${API_BASE}/interactions`);
