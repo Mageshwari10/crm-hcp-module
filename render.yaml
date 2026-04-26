@@ -15,12 +15,6 @@ services:
       - key: GROQ_API_KEY
         sync: false
 
-  # React Frontend (Static Site)
-  - type: static
-    name: crm-hcp-frontend
-    buildCommand: "cd frontend && npm install && npm run build"
-    staticPublishDir: "frontend/dist"
-
 databases:
   - name: crm-hcp-db
     region: oregon
