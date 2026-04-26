@@ -5,7 +5,7 @@ from sqlalchemy import inspect
 from dotenv import load_dotenv
 
 import models, schemas, agent
-from database import engine, get_db
+from database import engine, get_db, SessionLocal
 
 # Load env variables
 load_dotenv()
@@ -24,14 +24,52 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+def seed_sample_hcps():
+    """Add sample HCP data if the table is empty"""
+    db = SessionLocal()
+    try:
+        existing_hcps = db.query(models.HCP).count()
+        if existing_hcps == 0:
+            sample_hcps = [
+                models.HCP(name="Dr. Martin", specialty="Cardiovascular", tier="Premium", location="Boston"),
+                models.HCP(name="Dr. Anderson", specialty="Diabetes", tier="Standard", location="New York"),
+                models.HCP(name="Dr. Johnson", specialty="Cardiology", tier="Standard", location="Chicago"),
+                models.HCP(name="Dr. Williams", specialty="Oncology", tier="Gold", location="Los Angeles"),
+            ]
+            db.add_all(sample_hcps)
+            db.commit()
+            print("✅ Sample HCPs added to database")
+    except Exception as e:
+        print(f"Error seeding HCPs: {e}")
+    finally:
+        db.close()
+
+# Seed data on startup
+seed_sample_hcps()
+
 @app.post("/api/chat")
 def chat_with_agent(req: schemas.ChatRequest):
     try:
         ag = agent.get_agent()
-        # Initialize LangGraph state and invoke
+        # Initialize agent and invoke
         result = ag.invoke({"messages": [("user", req.message)]}, config={"configurable": {"thread_id": req.thread_id}})
-        # The result will contain the conversation history. We get the last AIMessage.
-        ai_response = result["messages"][-1].content
+        # Get response from result
+        if "messages" in result:
+            messages = result["messages"]
+            # Extract the response content
+            if messages and isinstance(messages, list):
+                last_item = messages[-1]
+                if isinstance(last_item, dict) and "response" in last_item:
+                    ai_response = last_item["response"]
+                elif hasattr(last_item, 'content'):
+                    ai_response = last_item.content
+                else:
+                    ai_response = str(last_item)
+            else:
+                ai_response = str(messages)
+        else:
+            ai_response = str(result)
+        
         return {"response": ai_response}
     except Exception as e:
         import traceback

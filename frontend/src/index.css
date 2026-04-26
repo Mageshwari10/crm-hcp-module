@@ -210,6 +210,8 @@ input:focus, select:focus, textarea:focus {
   display: flex;
   flex-direction: column;
   background: #f9fafb;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .agent-msg {
@@ -229,6 +231,8 @@ input:focus, select:focus, textarea:focus {
   display: flex;
   gap: 10px;
   background: #ffffff;
+  flex-shrink: 0;
+  min-height: auto;
 }
 
 .chat-input {
@@ -236,6 +240,7 @@ input:focus, select:focus, textarea:focus {
   border-radius: var(--radius-md);
   border: 1px solid var(--border-color);
   padding: 10px;
+  min-height: 40px;
 }
 
 .chat-log-btn {
@@ -249,4 +254,11 @@ input:focus, select:focus, textarea:focus {
   display: flex;
   align-items: center;
   gap: 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.chat-log-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }

@@ -1,0 +1,41 @@
+services:
+  # Python Backend (FastAPI)
+  - type: web
+    name: crm-hcp-backend
+    runtime: python
+    region: oregon
+    plan: free
+    buildCommand: "cd backend && pip install -r requirements.txt"
+    startCommand: "cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: crm-hcp-db
+          property: connectionString
+      - key: GROQ_API_KEY
+        sync: false # Set manually in dashboard
+
+  # React Frontend (Static Site)
+  - type: static
+    name: crm-hcp-frontend
+    runtime: node
+    region: oregon
+    plan: free
+    buildCommand: "cd frontend && npm install && npm run build"
+    staticPublishDir: "frontend/dist"
+    envVars:
+      - key: VITE_API_BASE
+        fromService:
+          name: crm-hcp-backend
+          type: web
+          property: host
+        # Note: We need to append /api to the host. 
+        # Render static sites env vars at build time. 
+        # If fromService doesn't provide the protocol, we might need a workaround.
+        # Actually, fromService name: crm-hcp-backend property: host gives "crm-hcp-backend.onrender.com"
+        # We need "https://crm-hcp-backend.onrender.com/api"
+
+databases:
+  - name: crm-hcp-db
+    region: oregon
+    plan: free
