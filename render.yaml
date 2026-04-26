@@ -18,22 +18,12 @@ services:
   # React Frontend (Static Site)
   - type: static
     name: crm-hcp-frontend
-    runtime: node
     region: oregon
-    plan: free
     buildCommand: "cd frontend && npm install && npm run build"
     staticPublishDir: "frontend/dist"
     envVars:
       - key: VITE_API_BASE
-        fromService:
-          name: crm-hcp-backend
-          type: web
-          property: host
-        # Note: We need to append /api to the host. 
-        # Render static sites env vars at build time. 
-        # If fromService doesn't provide the protocol, we might need a workaround.
-        # Actually, fromService name: crm-hcp-backend property: host gives "crm-hcp-backend.onrender.com"
-        # We need "https://crm-hcp-backend.onrender.com/api"
+        value: https://crm-hcp-backend.onrender.com/api # Placeholder, update after backend is live
 
 databases:
   - name: crm-hcp-db
