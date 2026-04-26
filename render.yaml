@@ -13,17 +13,13 @@ services:
           name: crm-hcp-db
           property: connectionString
       - key: GROQ_API_KEY
-        sync: false # Set manually in dashboard
+        sync: false
 
   # React Frontend (Static Site)
   - type: static
     name: crm-hcp-frontend
-    region: oregon
     buildCommand: "cd frontend && npm install && npm run build"
     staticPublishDir: "frontend/dist"
-    envVars:
-      - key: VITE_API_BASE
-        value: https://crm-hcp-backend.onrender.com/api # Placeholder, update after backend is live
 
 databases:
   - name: crm-hcp-db
