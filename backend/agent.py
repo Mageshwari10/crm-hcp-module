@@ -171,7 +171,7 @@ class SimpleCRMAgent:
         if ("log" in user_message.lower()) and ("meeting" in user_message.lower() or "interaction" in user_message.lower()):
             print("DEBUG: Routing to log_interaction handler")
             # Extract HCP name
-            hcp_match = re.search(r'(?:with\s+)?(Dr\.?\s+\w+(?:\s+\w+)?)', user_message, re.IGNORECASE)
+            hcp_match = re.search(r'(?:with\s+)?(Dr\.?\s*\w+(?:\s+\w+)?)', user_message, re.IGNORECASE)
             hcp_name = hcp_match.group(1).strip() if hcp_match else "Healthcare Professional"
             
             # Extract date or use today
@@ -208,7 +208,7 @@ class SimpleCRMAgent:
         elif ("profile" in user_message.lower() or "about" in user_message.lower() or "specialty" in user_message.lower() or "tier" in user_message.lower()) and "dr" in user_message.lower():
             print("DEBUG: Routing to get_profile handler")
             # Extract HCP name - simple approach: find "Dr." then get only the next capitalized word
-            hcp_match = re.search(r'Dr\.?\s+([A-Z][a-z]+)', user_message)
+            hcp_match = re.search(r'Dr\.?\s*([A-Z][a-z]+)', user_message)
             if hcp_match:
                 hcp_name = f"Dr. {hcp_match.group(1)}"
                 print(f"DEBUG: Extracted HCP name: {hcp_name}")
@@ -224,10 +224,12 @@ class SimpleCRMAgent:
                 except Exception as e:
                     print(f"DEBUG: Profile error: {str(e)}")
                     return {"messages": [{"response": f"Could not find profile for {hcp_name}"}]}
+            else:
+                return {"messages": [{"response": "I couldn't identify the HCP name. Please specify (e.g. Dr. Smith)."}]}
         elif ("recent" in user_message.lower() or "history" in user_message.lower() or "interactions" in user_message.lower()) and "dr" in user_message.lower():
             print("DEBUG: Routing to get_interactions handler")
             # Extract HCP name - simple approach: find "Dr." then get only the next capitalized word
-            hcp_match = re.search(r'Dr\.?\s+([A-Z][a-z]+)', user_message)
+            hcp_match = re.search(r'Dr\.?\s*([A-Z][a-z]+)', user_message)
             if hcp_match:
                 hcp_name = f"Dr. {hcp_match.group(1)}"
                 print(f"DEBUG: Extracted HCP name for interactions: {hcp_name}")
@@ -243,10 +245,12 @@ class SimpleCRMAgent:
                 except Exception as e:
                     print(f"DEBUG: Interactions error: {str(e)}")
                     return {"messages": [{"response": f"No interactions found for {hcp_name}"}]}
+            else:
+                return {"messages": [{"response": "I couldn't identify the HCP name to fetch interactions for. Please specify (e.g. Dr. Smith)."}]}
         elif ("follow" in user_message.lower() or "schedule" in user_message.lower()) and "dr" in user_message.lower():
             print("DEBUG: Routing to schedule_followup handler")
             # Extract HCP name - simple approach: find "Dr." then get only the next capitalized word
-            hcp_match = re.search(r'Dr\.?\s+([A-Z][a-z]+)', user_message)
+            hcp_match = re.search(r'Dr\.?\s*([A-Z][a-z]+)', user_message)
             if hcp_match:
                 hcp_name = f"Dr. {hcp_match.group(1)}"
                 print(f"DEBUG: Extracted HCP name for followup: {hcp_name}")
@@ -266,6 +270,8 @@ class SimpleCRMAgent:
                 except Exception as e:
                     print(f"DEBUG: Followup error: {str(e)}")
                     return {"messages": [{"response": f"Could not schedule follow-up: {str(e)}"}]}
+            else:
+                return {"messages": [{"response": "I couldn't identify the HCP name to schedule a follow-up for. Please specify (e.g. Dr. Smith)."}]}
         else:
             print("DEBUG: Routing to general response")
             return {"messages": [{"response": f"Hi! I can help log interactions with HCPs. Try:\n• 'Log meeting with Dr. Smith about diabetes'\n• 'Tell me about Dr. Johnson'\n• 'Show interactions with Dr. Anderson'"}]}

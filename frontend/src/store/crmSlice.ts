@@ -75,9 +75,15 @@ export const sendChatMessage = createAsyncThunk(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message, thread_id: 'local_session_1' })
     });
+    
     const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.detail || 'Error communicating with AI');
+    }
+    
     dispatch(fetchInteractions()); // Refresh data after chat as it might have logged or edited
-    return data.response;
+    return data.response || "No response generated.";
   }
 );
 
