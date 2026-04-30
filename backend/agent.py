@@ -271,6 +271,31 @@ class SimpleCRMAgent:
                         return {"messages": [{"response": f"Could not schedule follow-up: {str(e)}"}]}
                 else:
                     return {"messages": [{"response": "I couldn't identify the HCP name to schedule a follow-up for. Please specify (e.g. Dr. Smith)."}]}
+            elif "edit" in user_message.lower() or "update" in user_message.lower() or "change" in user_message.lower():
+                print("DEBUG: Routing to edit_interaction handler")
+                # Extract ID
+                id_match = re.search(r'ID\s*(\d+)', user_message, re.IGNORECASE)
+                interaction_id = int(id_match.group(1)) if id_match else None
+                
+                if not interaction_id:
+                    return {"messages": [{"response": "Please provide the interaction ID to edit (e.g. 'Edit interaction ID 5')."}]}
+                
+                # Simple extraction for field and value
+                field = "notes"
+                if "date" in user_message.lower(): field = "date"
+                elif "product" in user_message.lower(): field = "products_discussed"
+                
+                new_val = user_message.split(" to ")[-1] if " to " in user_message else "Updated via chat"
+                
+                try:
+                    result = self.tools['edit_interaction'].invoke({
+                        'interaction_id': interaction_id,
+                        'field_to_update': field,
+                        'new_value': new_val
+                    })
+                    return {"messages": [{"response": result}]}
+                except Exception as e:
+                    return {"messages": [{"response": f"Error updating interaction: {str(e)}"}]}
             else:
                 print("DEBUG: Routing to general response")
                 return {"messages": [{"response": f"Hi! I can help log interactions with HCPs. Try:\n• 'Log meeting with Dr. Smith about diabetes'\n• 'Tell me about Dr. Johnson'\n• 'Show interactions with Dr. Anderson'"}]}
