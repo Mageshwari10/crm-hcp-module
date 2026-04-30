@@ -43,6 +43,13 @@
 
 ---
 
+## 🚀 Live Demo 🌐
+
+- **Frontend (Vercel):** [https://crm-hcp-module-95as-51ealvi4s-mageshwari10s-projects.vercel.app](https://crm-hcp-module-95as-51ealvi4s-mageshwari10s-projects.vercel.app)
+- **Backend API (Render):** [https://crm-hcp-module-zs5x.onrender.com](https://crm-hcp-module-zs5x.onrender.com)
+
+---
+
 ## 🔧 Tech Stack 
 
 | Component | Technology | Emoji |
@@ -54,7 +61,7 @@
 
 ---
 
-## 🚀 Getting Started 
+## 🚀 Getting Started (Development)
 
 ### 1️⃣ Database & Backend Setup 🔥
 
