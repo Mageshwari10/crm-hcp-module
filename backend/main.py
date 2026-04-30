@@ -62,8 +62,8 @@ def chat_with_agent(req: schemas.ChatRequest):
         # Initialize agent and invoke
         result = ag.invoke({"messages": [("user", req.message)]}, config={"configurable": {"thread_id": req.thread_id}})
         
-        # Safety check: if result is None
-        if result is None:
+        # Robust safety check
+        if result is None or not isinstance(result, dict):
             return {"response": "I'm sorry, I couldn't process that request right now. Please try again."}
 
         # Get response from result
@@ -110,4 +110,4 @@ def get_hcps(db: Session = Depends(get_db)):
 
 @app.get("/")
 def read_root():
-    return {"message": "CRM HCP API is running."}
+    return {"message": "CRM HCP API is running v2.0 (Fixed Agent Error Handler)"}
