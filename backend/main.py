@@ -61,6 +61,11 @@ def chat_with_agent(req: schemas.ChatRequest):
         ag = agent.get_agent()
         # Initialize agent and invoke
         result = ag.invoke({"messages": [("user", req.message)]}, config={"configurable": {"thread_id": req.thread_id}})
+        
+        # Safety check: if result is None
+        if result is None:
+            return {"response": "I'm sorry, I couldn't process that request right now. Please try again."}
+
         # Get response from result
         if "messages" in result:
             messages = result["messages"]

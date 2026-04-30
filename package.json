@@ -1,0 +1,10 @@
+{
+  "name": "crm-hcp-module",
+  "private": true,
+  "workspaces": [
+    "frontend"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace=frontend"
+  }
+}

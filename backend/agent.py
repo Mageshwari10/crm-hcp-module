@@ -153,128 +153,130 @@ class SimpleCRMAgent:
         self.tools = {tool.name: tool for tool in tools}
     
     def invoke(self, input_data: dict, config: dict = None) -> dict:
-        import re
-        messages = input_data.get("messages", [])
-        
-        today_date = date.today().strftime("%Y-%m-%d")
-        
-        # Extract user message
-        user_message = ""
-        for sender, text in messages:
-            if sender == "user":
-                user_message = text
-                break
-        
-        print(f"DEBUG: User message received: {user_message}")
-        
-        # Route based on keywords
-        if ("log" in user_message.lower()) and ("meeting" in user_message.lower() or "interaction" in user_message.lower()):
-            print("DEBUG: Routing to log_interaction handler")
-            # Extract HCP name
-            hcp_match = re.search(r'(?:with\s+)?(Dr\.?\s*\w+(?:\s+\w+)?)', user_message, re.IGNORECASE)
-            hcp_name = hcp_match.group(1).strip() if hcp_match else "Healthcare Professional"
+        try:
+            import re
+            messages = input_data.get("messages", [])
             
-            # Extract date or use today
-            date_str = today_date
+            today_date = date.today().strftime("%Y-%m-%d")
             
-            # Extract products
-            products_str = "General discussion"
-            if 'diabetes' in user_message.lower():
-                products_str = "Diabetes"
-            elif 'cardiovascular' in user_message.lower():
-                products_str = "Cardiovascular"
+            # Extract user message
+            user_message = ""
+            for sender, text in messages:
+                if sender == "user":
+                    user_message = text
+                    break
             
-            notes = user_message[:150]
+            print(f"DEBUG: User message received: {user_message}")
             
-            print(f"DEBUG: About to call log_interaction with hcp={hcp_name}, date={date_str}, products={products_str}")
-            
-            # Call tool directly
-            try:
-                result = self.tools['log_interaction'].invoke({
-                    'hcp_name': hcp_name,
-                    'date_str': date_str,
-                    'notes': notes,
-                    'products_discussed': products_str
-                })
-                print(f"DEBUG: Tool result: {result}")
-                # Clean up the response message
-                clean_response = result.replace(" about on ", " on ")
-                return {"messages": [{"response": clean_response}]}
-            except Exception as e:
-                print(f"DEBUG: Tool error: {str(e)}")
-                import traceback
-                traceback.print_exc()
-                return {"messages": [{"response": f"Error: {str(e)}"}]}
-        elif ("profile" in user_message.lower() or "about" in user_message.lower() or "specialty" in user_message.lower() or "tier" in user_message.lower()) and "dr" in user_message.lower():
-            print("DEBUG: Routing to get_profile handler")
-            # Extract HCP name - simple approach: find "Dr." then get only the next capitalized word
-            hcp_match = re.search(r'Dr\.?\s*([A-Z][a-z]+)', user_message)
-            if hcp_match:
-                hcp_name = f"Dr. {hcp_match.group(1)}"
-                print(f"DEBUG: Extracted HCP name: {hcp_name}")
-            else:
-                hcp_name = ""
-                print(f"DEBUG: No HCP match found")
-            
-            if hcp_name and hcp_name != "Dr. ":
+            # Route based on keywords
+            if ("log" in user_message.lower()) and ("meeting" in user_message.lower() or "interaction" in user_message.lower()):
+                print("DEBUG: Routing to log_interaction handler")
+                # Extract HCP name
+                hcp_match = re.search(r'(?:with\s+)?(Dr\.?\s*\w+(?:\s+\w+)?)', user_message, re.IGNORECASE)
+                hcp_name = hcp_match.group(1).strip() if hcp_match else "Healthcare Professional"
+                
+                # Extract date or use today
+                date_str = today_date
+                
+                # Extract products
+                products_str = "General discussion"
+                if 'diabetes' in user_message.lower():
+                    products_str = "Diabetes"
+                elif 'cardiovascular' in user_message.lower():
+                    products_str = "Cardiovascular"
+                
+                notes = user_message[:150]
+                
+                print(f"DEBUG: About to call log_interaction with hcp={hcp_name}, date={date_str}, products={products_str}")
+                
+                # Call tool directly
                 try:
-                    result = self.tools['get_hcp_profile'].invoke({'hcp_name': hcp_name})
-                    print(f"DEBUG: Profile result: {result}")
-                    return {"messages": [{"response": result}]}
-                except Exception as e:
-                    print(f"DEBUG: Profile error: {str(e)}")
-                    return {"messages": [{"response": f"Could not find profile for {hcp_name}"}]}
-            else:
-                return {"messages": [{"response": "I couldn't identify the HCP name. Please specify (e.g. Dr. Smith)."}]}
-        elif ("recent" in user_message.lower() or "history" in user_message.lower() or "interactions" in user_message.lower()) and "dr" in user_message.lower():
-            print("DEBUG: Routing to get_interactions handler")
-            # Extract HCP name - simple approach: find "Dr." then get only the next capitalized word
-            hcp_match = re.search(r'Dr\.?\s*([A-Z][a-z]+)', user_message)
-            if hcp_match:
-                hcp_name = f"Dr. {hcp_match.group(1)}"
-                print(f"DEBUG: Extracted HCP name for interactions: {hcp_name}")
-            else:
-                hcp_name = ""
-                print(f"DEBUG: No HCP match found for interactions")
-            
-            if hcp_name and hcp_name != "Dr. ":
-                try:
-                    result = self.tools['get_recent_interactions'].invoke({'hcp_name': hcp_name})
-                    print(f"DEBUG: Interactions result: {result}")
-                    return {"messages": [{"response": result}]}
-                except Exception as e:
-                    print(f"DEBUG: Interactions error: {str(e)}")
-                    return {"messages": [{"response": f"No interactions found for {hcp_name}"}]}
-            else:
-                return {"messages": [{"response": "I couldn't identify the HCP name to fetch interactions for. Please specify (e.g. Dr. Smith)."}]}
-        elif ("follow" in user_message.lower() or "schedule" in user_message.lower()) and "dr" in user_message.lower():
-            print("DEBUG: Routing to schedule_followup handler")
-            # Extract HCP name - simple approach: find "Dr." then get only the next capitalized word
-            hcp_match = re.search(r'Dr\.?\s*([A-Z][a-z]+)', user_message)
-            if hcp_match:
-                hcp_name = f"Dr. {hcp_match.group(1)}"
-                print(f"DEBUG: Extracted HCP name for followup: {hcp_name}")
-            else:
-                hcp_name = ""
-                print(f"DEBUG: No HCP match found for followup")
-            
-            if hcp_name and hcp_name != "Dr. ":
-                try:
-                    result = self.tools['schedule_followup'].invoke({
+                    result = self.tools['log_interaction'].invoke({
                         'hcp_name': hcp_name,
-                        'task_description': user_message[:150],
-                        'due_date': today_date
+                        'date_str': date_str,
+                        'notes': notes,
+                        'products_discussed': products_str
                     })
-                    print(f"DEBUG: Followup result: {result}")
-                    return {"messages": [{"response": result}]}
+                    print(f"DEBUG: Tool result: {result}")
+                    # Clean up the response message
+                    clean_response = result.replace(" about on ", " on ")
+                    return {"messages": [{"response": clean_response}]}
                 except Exception as e:
-                    print(f"DEBUG: Followup error: {str(e)}")
-                    return {"messages": [{"response": f"Could not schedule follow-up: {str(e)}"}]}
+                    print(f"DEBUG: Tool error: {str(e)}")
+                    return {"messages": [{"response": f"Error: {str(e)}"}]}
+            elif ("profile" in user_message.lower() or "about" in user_message.lower() or "specialty" in user_message.lower() or "tier" in user_message.lower()) and "dr" in user_message.lower():
+                print("DEBUG: Routing to get_profile handler")
+                # Extract HCP name - simple approach: find "Dr." then get only the next capitalized word
+                hcp_match = re.search(r'Dr\.?\s*([A-Z][a-z]+)', user_message)
+                if hcp_match:
+                    hcp_name = f"Dr. {hcp_match.group(1)}"
+                    print(f"DEBUG: Extracted HCP name: {hcp_name}")
+                else:
+                    hcp_name = ""
+                    print(f"DEBUG: No HCP match found")
+                
+                if hcp_name and hcp_name != "Dr. ":
+                    try:
+                        result = self.tools['get_hcp_profile'].invoke({'hcp_name': hcp_name})
+                        print(f"DEBUG: Profile result: {result}")
+                        return {"messages": [{"response": result}]}
+                    except Exception as e:
+                        print(f"DEBUG: Profile error: {str(e)}")
+                        return {"messages": [{"response": f"Could not find profile for {hcp_name}"}]}
+                else:
+                    return {"messages": [{"response": "I couldn't identify the HCP name. Please specify (e.g. Dr. Smith)."}]}
+            elif ("recent" in user_message.lower() or "history" in user_message.lower() or "interactions" in user_message.lower()) and "dr" in user_message.lower():
+                print("DEBUG: Routing to get_interactions handler")
+                # Extract HCP name - simple approach: find "Dr." then get only the next capitalized word
+                hcp_match = re.search(r'Dr\.?\s*([A-Z][a-z]+)', user_message)
+                if hcp_match:
+                    hcp_name = f"Dr. {hcp_match.group(1)}"
+                    print(f"DEBUG: Extracted HCP name for interactions: {hcp_name}")
+                else:
+                    hcp_name = ""
+                    print(f"DEBUG: No HCP match found for interactions")
+                
+                if hcp_name and hcp_name != "Dr. ":
+                    try:
+                        result = self.tools['get_recent_interactions'].invoke({'hcp_name': hcp_name})
+                        print(f"DEBUG: Interactions result: {result}")
+                        return {"messages": [{"response": result}]}
+                    except Exception as e:
+                        print(f"DEBUG: Interactions error: {str(e)}")
+                        return {"messages": [{"response": f"No interactions found for {hcp_name}"}]}
+                else:
+                    return {"messages": [{"response": "I couldn't identify the HCP name to fetch interactions for. Please specify (e.g. Dr. Smith)."}]}
+            elif ("follow" in user_message.lower() or "schedule" in user_message.lower()) and "dr" in user_message.lower():
+                print("DEBUG: Routing to schedule_followup handler")
+                # Extract HCP name - simple approach: find "Dr." then get only the next capitalized word
+                hcp_match = re.search(r'Dr\.?\s*([A-Z][a-z]+)', user_message)
+                if hcp_match:
+                    hcp_name = f"Dr. {hcp_match.group(1)}"
+                    print(f"DEBUG: Extracted HCP name for followup: {hcp_name}")
+                else:
+                    hcp_name = ""
+                    print(f"DEBUG: No HCP match found for followup")
+                
+                if hcp_name and hcp_name != "Dr. ":
+                    try:
+                        result = self.tools['schedule_followup'].invoke({
+                            'hcp_name': hcp_name,
+                            'task_description': user_message[:150],
+                            'due_date': today_date
+                        })
+                        print(f"DEBUG: Followup result: {result}")
+                        return {"messages": [{"response": result}]}
+                    except Exception as e:
+                        print(f"DEBUG: Followup error: {str(e)}")
+                        return {"messages": [{"response": f"Could not schedule follow-up: {str(e)}"}]}
+                else:
+                    return {"messages": [{"response": "I couldn't identify the HCP name to schedule a follow-up for. Please specify (e.g. Dr. Smith)."}]}
             else:
-                return {"messages": [{"response": "I couldn't identify the HCP name to schedule a follow-up for. Please specify (e.g. Dr. Smith)."}]}
-        else:
-            print("DEBUG: Routing to general response")
-            return {"messages": [{"response": f"Hi! I can help log interactions with HCPs. Try:\n• 'Log meeting with Dr. Smith about diabetes'\n• 'Tell me about Dr. Johnson'\n• 'Show interactions with Dr. Anderson'"}]}
+                print("DEBUG: Routing to general response")
+                return {"messages": [{"response": f"Hi! I can help log interactions with HCPs. Try:\n• 'Log meeting with Dr. Smith about diabetes'\n• 'Tell me about Dr. Johnson'\n• 'Show interactions with Dr. Anderson'"}]}
+        except Exception as e:
+            print(f"CRITICAL: Agent invoke error: {str(e)}")
+            return {"messages": [{"response": f"I encountered an error: {str(e)}"}]}
 
 def get_agent():
     api_key = os.getenv("GROQ_API_KEY")
